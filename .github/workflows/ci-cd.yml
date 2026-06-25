@@ -1,0 +1,64 @@
+name: CI-CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  ACR_NAME: hussainacrfinal2026
+  ACR_LOGIN_SERVER: hussainacrfinal2026.azurecr.io
+  IMAGE_NAME: cloudscale-final
+  RESOURCE_GROUP: hussain-final-aks-rg
+  AKS_CLUSTER: hussain-final-aks
+
+jobs:
+  # 1) Build and test the image on every push and pull request
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }} .
+
+      - name: Test image (health check)
+        run: |
+          docker run -d -p 3000:3000 --name testapp $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
+          sleep 5
+          curl -f http://localhost:3000/health
+          docker rm -f testapp
+
+  # 2) Deploy to AKS - only on push to main, and only after manual approval
+  deploy:
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and push image to ACR
+        run: |
+          az acr login --name $ACR_NAME
+          docker build -t $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }} -t $ACR_LOGIN_SERVER/$IMAGE_NAME:latest .
+          docker push $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
+          docker push $ACR_LOGIN_SERVER/$IMAGE_NAME:latest
+
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER --overwrite-existing
+
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl set image deployment/cloudscale cloudscale=$ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
+          kubectl rollout status deployment/cloudscale
