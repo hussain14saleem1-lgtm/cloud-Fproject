@@ -1,0 +1,12 @@
+{
+  "name": "cloudscale-final",
+  "version": "1.0.0",
+  "description": "CloudScale Final Project - web app for AKS + ACR",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
