@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudscale
+  labels:
+    app: cloudscale
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cloudscale
+  template:
+    metadata:
+      labels:
+        app: cloudscale
+    spec:
+      containers:
+        - name: cloudscale
+          image: hussainacrfinal2026.azurecr.io/cloudscale-final:v1
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
