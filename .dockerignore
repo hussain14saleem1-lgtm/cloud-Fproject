@@ -5,3 +5,10 @@ npm-debug.log
 .env
 Dockerfile
 .dockerignore
+
+# Terraform (don't copy into image)
+.terraform
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tf

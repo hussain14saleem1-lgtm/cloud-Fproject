@@ -13,7 +13,7 @@ variable "prefix" {
 variable "location" {
   description = "Azure region"
   type        = string
-  default     = "eastus"
+  default     = "switzerlandnorth"
 }
 
 variable "acr_name" {
@@ -31,5 +31,5 @@ variable "node_count" {
 variable "vm_size" {
   description = "VM size for AKS nodes"
   type        = string
-  default     = "Standard_B2s"
+  default     = "Standard_B2s_v2"
 }
